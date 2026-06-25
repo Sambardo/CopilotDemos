@@ -1,11 +1,21 @@
 """Tip jar page.
 
-STUBBED OUT for live building. A cafe pools its weekly tips and splits
-them among staff in proportion to hours worked. Wire this UI up to
-logic.tip_jar during the demo.
 """
 
 import streamlit as st
+
+from logic.tip_jar import split_tips_by_hours
+
+DEFAULT_TOTAL_TIPS = 250.0
+DEFAULT_STAFF_COUNT = 3
+DEFAULT_HOURS = 8.0
+MIN_STAFF_COUNT = 1
+MIN_HOURS = 0.0
+MIN_TIPS = 0.0
+STAFF_COUNT_STEP = 1
+MONEY_STEP = 1.0
+HOURS_STEP = 0.5
+DISPLAY_INDEX_OFFSET = 1
 
 
 def render() -> None:
@@ -13,11 +23,54 @@ def render() -> None:
     st.title("Tip Jar")
     st.write("Split a cafe's pooled weekly tips among staff by hours worked.")
 
-    # DEMO GAP: collect total pooled tips for the week.
+    total_tips = st.number_input(
+        "Total pooled tips ($)",
+        min_value=MIN_TIPS,
+        value=DEFAULT_TOTAL_TIPS,
+        step=MONEY_STEP,
+    )
+    staff_count = st.number_input(
+        "Number of staff",
+        min_value=MIN_STAFF_COUNT,
+        value=DEFAULT_STAFF_COUNT,
+        step=STAFF_COUNT_STEP,
+    )
 
-    # DEMO GAP: collect each staff member's name and hours worked.
+    staff_entries: list[tuple[str, float]] = []
+    for index in range(int(staff_count)):
+        display_index = index + DISPLAY_INDEX_OFFSET
+        st.markdown(f"**Staff member {display_index}**")
+        name_column, hours_column = st.columns(2)
+        with name_column:
+            name = st.text_input("Name", value=f"Staff {display_index}", key=f"staff_name_{index}")
+        with hours_column:
+            hours = st.number_input(
+                "Hours worked",
+                min_value=MIN_HOURS,
+                value=DEFAULT_HOURS,
+                step=HOURS_STEP,
+                key=f"staff_hours_{index}",
+            )
+        staff_entries.append((name.strip(), hours))
 
-    # DEMO GAP: on button press, call logic.tip_jar.split_tips_by_hours and
-    # show each staff member's share.
+    if not st.button("Split tips"):
+        return
 
-    st.info("This tool is not built yet — coming together live in the demo.")
+    names = [name for name, _ in staff_entries]
+    if len(names) != len(set(names)):
+        st.error("Staff names must be unique")
+        return
+
+    try:
+        # Pour the UI inputs into the pure logic before serving the breakdown.
+        staff_hours = dict(staff_entries)
+        shares = split_tips_by_hours(total_tips, staff_hours)
+    except ValueError as error:
+        st.error(str(error))
+        return
+
+    st.subheader("Tip breakdown")
+    for name, amount in shares.items():
+        st.write(f"{name}: ${amount:.2f}")
+
+    st.metric("Total distributed", f"${sum(shares.values()):.2f}")
