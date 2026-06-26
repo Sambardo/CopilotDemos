@@ -14,6 +14,7 @@ This is a small Streamlit multi-page app used to demo GitHub Copilot live. Follo
 - One-line docstrings on every function.
 - Prefer early returns over nested if/else.
 - No magic numbers — use module-level named constants.
+- Never hard-wrap comments, docstrings, or prose mid-sentence. Write each sentence, paragraph, or bullet as one line and let the editor soft-wrap. Only break at real boundaries (new paragraph, new bullet, new heading).
 
 ## Views
 - Each `views/*.py` exposes exactly one `render()` function.
